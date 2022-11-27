@@ -3,6 +3,8 @@ package com.danradchuk.exchangeratechallenge.service;
 import com.danradchuk.exchangeratechallenge.api.ExchangeRateClient;
 import com.danradchuk.exchangeratechallenge.api.dto.ExchangeRateResponse;
 import com.danradchuk.exchangeratechallenge.controller.ConversionResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -17,7 +19,7 @@ public class ExchangeRateService {
         this.client = client;
     }
 
-    public ExchangeRateResponse getExchangeRates(String from, String to) {
+    public ExchangeRateResponse getExchangeRates(@NotNull String from, @Nullable String to) {
         ExchangeRateResponse resp = client.fetchExchangeRates(from);
         Map<String, BigDecimal> rates = resp.getRates();
         if (to != null && rates.containsKey(to)) {
@@ -27,7 +29,7 @@ public class ExchangeRateService {
         return resp;
     }
 
-    public ConversionResponse convert(String from, String to, BigDecimal amount) {
+    public ConversionResponse convert(@NotNull String from, @Nullable String to, @NotNull BigDecimal amount) {
         ExchangeRateResponse resp = client.fetchExchangeRates(from);
         Map<String, BigDecimal> rates = resp.getRates();
         if (to != null && rates.containsKey(to)) {
