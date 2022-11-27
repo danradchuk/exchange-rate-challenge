@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
+
 @RestController
 @RequestMapping("/api/v0/exchange-rates")
 public class ExchangeRateController {
@@ -23,5 +25,14 @@ public class ExchangeRateController {
             @RequestParam(value = "to", required = false) String to
     ) {
         return ResponseEntity.ok(exchangeRateService.getExchangeRates(from, to));
+    }
+
+    @GetMapping("/converter")
+    public ResponseEntity<ConversionResponse> convert(
+            @RequestParam("from") String from,
+            @RequestParam(value = "to", required = false) String to,
+            @RequestParam("amount") BigDecimal amount
+    ) {
+        return ResponseEntity.ok(exchangeRateService.convert(from, to, amount));
     }
 }

@@ -3,6 +3,7 @@ package com.danradchuk.exchangeratechallenge;
 import com.danradchuk.exchangeratechallenge.api.dto.ExchangeRateResponse;
 import com.danradchuk.exchangeratechallenge.api.exception.ClientApiException;
 import com.danradchuk.exchangeratechallenge.api.exception.ServerApiException;
+import com.danradchuk.exchangeratechallenge.controller.ConversionResponse;
 import com.danradchuk.exchangeratechallenge.controller.ErrorResponse;
 import com.danradchuk.exchangeratechallenge.controller.ExchangeRateController;
 import com.danradchuk.exchangeratechallenge.service.ExchangeRateService;
@@ -186,5 +187,61 @@ public class ExchangeRateControllerTest {
         assertEquals(resp.getDetails(), "CircuitBreaker 'exchange-rate' is CLOSED and does not permit further calls");
 
         verify(service, times(1)).getExchangeRates("USD", "EUR");
+    }
+
+    @Test
+    public void shouldSucceedToConvertIfFromAndToAndAmountAreNotNull() throws Exception {
+        ConversionResponse mockResp = new ConversionResponse("USD", Map.of("EUR", BigDecimal.valueOf(1000)));
+        when(service.convert("USD", "EUR", BigDecimal.valueOf(1000))).thenReturn(mockResp);
+
+        MvcResult res = this.mockMvc.perform(
+                        get("/api/v0/exchange-rates/converter")
+                                .contentType("application/json")
+                                .accept("application/json")
+                                .param("from", "USD")
+                                .param("to", "EUR")
+                                .param("amount", "1000")
+                )
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andDo(MockMvcResultHandlers.print())
+                .andReturn();
+
+        String respStr = res.getResponse().getContentAsString();
+        assertNotNull(respStr);
+        ConversionResponse resp = objectMapper.readValue(respStr, ConversionResponse.class);
+        assertEquals(mockResp.getFrom(), resp.getFrom());
+        assertNotNull(resp.getResult());
+        assertEquals(BigDecimal.valueOf(1000), resp.getResult().get("EUR"));
+
+        verify(service, times(1)).convert("USD", "EUR", BigDecimal.valueOf(1000));
+    }
+
+    @Test
+    public void shouldSucceedToConvertIfToIsNull() throws Exception {
+        ConversionResponse mockResp = new ConversionResponse("USD",
+                Map.of("EUR", BigDecimal.valueOf(1000), "ASD", BigDecimal.TEN)
+        );
+        when(service.convert("USD", null, BigDecimal.valueOf(1000))).thenReturn(mockResp);
+
+        MvcResult res = this.mockMvc.perform(
+                        get("/api/v0/exchange-rates/converter")
+                                .contentType("application/json")
+                                .accept("application/json")
+                                .param("from", "USD")
+                                .param("amount", "1000")
+                )
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andDo(MockMvcResultHandlers.print())
+                .andReturn();
+
+        String respStr = res.getResponse().getContentAsString();
+        assertNotNull(respStr);
+        ConversionResponse resp = objectMapper.readValue(respStr, ConversionResponse.class);
+        assertEquals(mockResp.getFrom(), resp.getFrom());
+        assertNotNull(resp.getResult());
+        assertEquals(BigDecimal.valueOf(1000), resp.getResult().get("EUR"));
+        assertEquals(BigDecimal.TEN, resp.getResult().get("ASD"));
+
+        verify(service, times(1)).convert("USD", null, BigDecimal.valueOf(1000));
     }
 }
